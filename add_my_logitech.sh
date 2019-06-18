@@ -15,10 +15,14 @@ cat <<EOT >> ~/.xbindkeysrc
     b:6
 "xte 'keydown Alt_L' 'keydown Right' 'keyup Right' 'keyup Alt_L'"
     b:7
-"xdotool key XF86AudioLowerVolume"
+"xdotool keydown XF86AudioLowerVolume"
     b:8
-"xdotool key XF86AudioRaiseVolume"
+"xdotool keyup XF86AudioLowerVolume"
+    b:8 + Release
+"xdotool keydown XF86AudioRaiseVolume"
     b:9
+"xdotool keyup XF86AudioRaiseVolume"
+    b:9 + Release
 EOT
 
 xbindkeys -f ~/.xbindkeysrc
