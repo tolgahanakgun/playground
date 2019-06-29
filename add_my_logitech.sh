@@ -6,14 +6,14 @@
 # back button near thumb -> volume down
 # front button near thumb -> volume up
 
-sudo apt install xdotool xbindkeys xautomation
+sudo apt install xdotool xbindkeys
 
 xbindkeys --defaults > ~/.xbindkeysrc
 
 cat <<EOT >> ~/.xbindkeysrc
-"xte 'keydown Alt_L' 'keydown Left' 'keyup Left' 'keyup Alt_L'"
+"xdotool key XF86Back"
     b:6
-"xte 'keydown Alt_L' 'keydown Right' 'keyup Right' 'keyup Alt_L'"
+"xdotool key XF86Forward"
     b:7
 "xdotool keydown XF86AudioLowerVolume"
     b:8
