@@ -10,13 +10,13 @@ arg_parser.add_argument('--cert', help='Certificate file path, if not provided u
 arg_parser.add_argument('--user', help='username:password, like user1:mypass, ' 
     'or a file holds the username:password in each line if not provided uses no authentication')
 arg_parser.add_argument('--path', help='Path to serve, if not provided uses the current folder')
-arg_parser.add_argument('--port', help='Port to serve the server, default http:8080, default https:4443')
+arg_parser.add_argument('--port', help='Port to serve the server, default http:8080, default https:4443', type=int)
 args=arg_parser.parse_args()
 
-credentials_file = args.user
-single_user_key = ''
-if credentials_file is not None and  not os.path.isfile(credentials_file):
-    single_user_key = base64.b64encode(args.user)
+single_user_key = args.user
+credentials_file = None
+if single_user_key is not None and os.path.isfile(single_user_key):
+    credentials_file = args.user
 certifacate_path = args.cert
 
 if args.path is not None:
@@ -26,11 +26,11 @@ class AuthHandler(SimpleHTTPRequestHandler):
     def check_user(self, auth_text):
         global single_user_key, credentials_file
         if credentials_file is None:
-            return auth_text == 'Basic ' + single_user_key
+            return auth_text == 'Basic ' + base64.b64encode(single_user_key.encode('ascii')).decode('ascii')
         else:
             with open(credentials_file) as f:
                 for credentials in f.readline():
-                    if single_user_key == 'Basic ' + base64.b64encode(credentials):
+                    if single_user_key == 'Basic ' + base64.b64encode(credentials.encode('ascii')).decode('ascii'):
                         return True
                 return False
 
@@ -59,19 +59,24 @@ class AuthHandler(SimpleHTTPRequestHandler):
             pass
         else:
             self.do_AUTHHEAD()
-            self.wfile.write(self.headers.get('Authorization'))
-            self.wfile.write('not authenticated')
+            self.wfile.write(str.encode(self.headers.get('Authorization')))
+            self.wfile.write(b'\t!not authenticated\n')
             pass
 
-
 if certifacate_path is not None:
-    httpd = TCPServer(('', 4443 if args.port is None else args.port), AuthHandler)
+    if single_user_key is not None:
+        httpd = TCPServer(('', 4443 if args.port is None else args.port), AuthHandler)
+    else:
+        httpd = TCPServer(('', 4443 if args.port is None else args.port), SimpleHTTPRequestHandler)
     httpd.socket = ssl.wrap_socket (httpd.socket, certfile=certifacate_path, server_side=True)
     sa = httpd.socket.getsockname()
     print("Serving HTTP on "+ str(sa[0])+ " port "+ str(sa[1])+ "...")
     httpd.serve_forever()
 else:
-    httpd = TCPServer(('', 8080 if args.port is None else args.port), AuthHandler)
+    if single_user_key is not None:
+        httpd = TCPServer(('', 8080 if args.port is None else args.port), AuthHandler)
+    else:
+        httpd = TCPServer(('', 8080 if args.port is None else args.port), SimpleHTTPRequestHandler)
     sa = httpd.socket.getsockname()
     print("Serving HTTP on "+ str(sa[0])+ " port "+ str(sa[1])+ "...")
     httpd.serve_forever()
